@@ -67,8 +67,7 @@ b`,
 			files: files{
 				`a
 a`,
-				`a
-b`,
+				"a\nb",
 				`b`,
 			},
 			expected: counts{"a": 3, "b": 2},
