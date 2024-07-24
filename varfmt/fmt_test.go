@@ -137,3 +137,24 @@ func BenchmarkSprintf(b *testing.B) {
 		})
 	}
 }
+
+func TestSprintf(t *testing.T) {
+	type args struct {
+		format string
+		args   []interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Sprintf(tt.args.format, tt.args.args...); got != tt.want {
+				t.Errorf("Sprintf() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
