@@ -26,11 +26,11 @@ func Sprintf(format string, args ...interface{}) string {
 			i = j
 			switch {
 			case flag:
-				setind, _ := strconv.Atoi(ind.String())
+				setind, _ := strconv.Atoi(ind.String()) // setind - указанный индекс
 				ind.Reset()
 				ans.WriteString(fmt.Sprint(args[setind]))
 			case !flag:
-				ans.WriteString(fmt.Sprint(args[baseind]))
+				ans.WriteString(fmt.Sprint(args[baseind])) // baseind - естественный индекс
 			}
 			baseind++
 		default:
