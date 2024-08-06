@@ -1,0 +1,10 @@
+{{define "Info"}}
+    {{printf "%v:      %v/%v" "Project" .Project.GroupID .Project.ID}}
+    {{printf "%v:       🌿 %v" "Branch" .Branch}}
+    {{printf "%v:       %.8s %v" "Commit" .Commit.Hash .Commit.Message}}
+    {{printf "%s: %s" "CommitAuthor" .Commit.Author}}{{end}}
+{{define "Logs"}}{{range $index, $str := (loggs .RunnerLog)}}            {{printf "%s\n" $str }}{{end}}{{end}}
+{{define "Details"}}{{$length := len .Pipeline.FailedJobs}}
+{{range $ind, $content := .Pipeline.FailedJobs}}        {{printf "Stage: %s, Job %s" $content.Stage $content.Name}}
+{{template "Logs" $content}}{{if (less $ind $length)}}{{println}}{{end}}{{end}}{{end}}
+{{define "Header"}}Your pipeline #{{.Pipeline.ID}}{{if eq .Pipeline.Status "ok"}}{{printf " passed!"}}{{template "Info" .}}{{else}}{{printf " has failed!"}}{{template "Info" .}}{{template "Details" .}}{{end}}{{end}}
