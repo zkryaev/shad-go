@@ -1,55 +1,42 @@
-//go:build !solution
-
 package rwmutex
 
-// A RWMutex is a reader/writer mutual exclusion lock.
-// The lock can be held by an arbitrary number of readers or a single writer.
-// The zero value for a RWMutex is an unlocked mutex.
-//
-// If a goroutine holds a RWMutex for reading and another goroutine might
-// call Lock, no goroutine should expect to be able to acquire a read lock
-// until the initial read lock is released. In particular, this prohibits
-// recursive read locking. This is to ensure that the lock eventually becomes
-// available; a blocked Lock call excludes new readers from acquiring the
-// lock.
 type RWMutex struct {
+	wlock  chan int
+	rlock  chan int
+	isBusy bool
 }
 
-// New creates *RWMutex.
 func New() *RWMutex {
-	return nil
+	mutex := &RWMutex{wlock: make(chan int, 1), rlock: make(chan int, 1)}
+	mutex.rlock <- 0
+	mutex.isBusy = false
+	return mutex
 }
 
-// RLock locks rw for reading.
-//
-// It should not be used for recursive read locking; a blocked Lock
-// call excludes new readers from acquiring the lock. See the
-// documentation on the RWMutex type.
 func (rw *RWMutex) RLock() {
-
+	r := <-rw.rlock
+	if !rw.isBusy {
+		rw.wlock <- 1
+		rw.isBusy = true
+	}
+	r += 1
+	rw.rlock <- r
 }
 
-// RUnlock undoes a single RLock call;
-// it does not affect other simultaneous readers.
-// It is a run-time error if rw is not locked for reading
-// on entry to RUnlock.
 func (rw *RWMutex) RUnlock() {
-
+	r := <-rw.rlock
+	if r-1 == 0 {
+		rw.isBusy = false
+		<-rw.wlock
+	}
+	r -= 1
+	rw.rlock <- r
 }
 
-// Lock locks rw for writing.
-// If the lock is already locked for reading or writing,
-// Lock blocks until the lock is available.
 func (rw *RWMutex) Lock() {
-
+	rw.wlock <- 1
 }
 
-// Unlock unlocks rw for writing. It is a run-time error if rw is
-// not locked for writing on entry to Unlock.
-//
-// As with Mutexes, a locked RWMutex is not associated with a particular
-// goroutine. One goroutine may RLock (Lock) a RWMutex and then
-// arrange for another goroutine to RUnlock (Unlock) it.
 func (rw *RWMutex) Unlock() {
-
+	<-rw.wlock
 }
