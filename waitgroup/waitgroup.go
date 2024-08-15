@@ -2,42 +2,60 @@
 
 package waitgroup
 
-// A WaitGroup waits for a collection of goroutines to finish.
-// The main goroutine calls Add to set the number of
-// goroutines to wait for. Then each of the goroutines
-// runs and calls Done when finished. At the same time,
-// Wait can be used to block until all goroutines have finished.
 type WaitGroup struct {
+	cnt     chan int
+	waiters int
+	lock    chan struct{}
 }
 
-// New creates WaitGroup.
 func New() *WaitGroup {
-	return nil
+	wg := &WaitGroup{
+		cnt:  make(chan int, 1),
+		lock: make(chan struct{}, 1),
+	}
+	wg.waiters = 0
+	wg.cnt <- 0
+	return wg
 }
 
-// Add adds delta, which may be negative, to the WaitGroup counter.
-// If the counter becomes zero, all goroutines blocked on Wait are released.
-// If the counter goes negative, Add panics.
-//
-// Note that calls with a positive delta that occur when the counter is zero
-// must happen before a Wait. Calls with a negative delta, or calls with a
-// positive delta that start when the counter is greater than zero, may happen
-// at any time.
-// Typically this means the calls to Add should execute before the statement
-// creating the goroutine or other event to be waited for.
-// If a WaitGroup is reused to wait for several independent sets of events,
-// new Add calls must happen after all previous Wait calls have returned.
-// See the WaitGroup example.
 func (wg *WaitGroup) Add(delta int) {
-
+	val := <-wg.cnt
+	val += delta
+	if val < 0 {
+		wg.cnt <- val
+		panic("negative WaitGroup counter")
+	}
+	wg.cnt <- val
 }
 
-// Done decrements the WaitGroup counter by one.
+// Do qne decrements the WaitGroup counter by one.
 func (wg *WaitGroup) Done() {
-
+	val := <-wg.cnt
+	val -= 1
+	if val < 0 {
+		wg.cnt <- val
+		panic("negative WaitGroup counter")
+	}
+	if val == 0 {
+		wg.cnt <- val
+		for wg.waiters > 0 {
+			// fmt.Println(wg.waiters)
+			wg.lock <- struct{}{}
+			wg.waiters--
+		}
+		return
+	}
+	wg.cnt <- val
 }
 
 // Wait blocks until the WaitGroup counter is zero.
 func (wg *WaitGroup) Wait() {
-
+	val := <-wg.cnt
+	if val == 0 {
+		wg.cnt <- val
+		return
+	}
+	wg.waiters++
+	wg.cnt <- val
+	<-wg.lock
 }
