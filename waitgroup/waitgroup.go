@@ -37,12 +37,11 @@ func (wg *WaitGroup) Done() {
 		panic("negative WaitGroup counter")
 	}
 	if val == 0 {
-		wg.cnt <- val
 		for wg.waiters > 0 {
-			// fmt.Println(wg.waiters)
 			wg.lock <- struct{}{}
 			wg.waiters--
 		}
+		wg.cnt <- val
 		return
 	}
 	wg.cnt <- val
@@ -51,11 +50,12 @@ func (wg *WaitGroup) Done() {
 // Wait blocks until the WaitGroup counter is zero.
 func (wg *WaitGroup) Wait() {
 	val := <-wg.cnt
+	wg.waiters++
 	if val == 0 {
+		wg.waiters--
 		wg.cnt <- val
 		return
 	}
-	wg.waiters++
 	wg.cnt <- val
 	<-wg.lock
 }
