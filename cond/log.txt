@@ -1,0 +1,8 @@
+=== RUN   TestCondSignal
+=== <-running
+c.Wait() № 1
+==Wait==
+==Wait Before Lock==
+==Wait After Lock==
+signal: interrupt
+FAIL	gitlab.com/slon/shad-go/cond	1.290s

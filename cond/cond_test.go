@@ -1,10 +1,11 @@
 package cond
 
 import (
-	"gitlab.com/slon/shad-go/tools/testtool"
 	"sync"
 	"testing"
 	"time"
+
+	"gitlab.com/slon/shad-go/tools/testtool"
 )
 
 func TestCondSignal(t *testing.T) {
@@ -61,7 +62,6 @@ func TestCondSignalOveruse(t *testing.T) {
 		c.Wait() // Checks if it will wait after empty signals
 		awake <- true
 		m.Unlock()
-
 	}()
 
 	<-running
