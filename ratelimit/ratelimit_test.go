@@ -154,17 +154,22 @@ func TestTimeDistribution(t *testing.T) {
 	sort.Slice(okTimes, func(i, j int) bool {
 		return okTimes[i] < okTimes[j]
 	})
-
 	for i, dt := range okTimes {
 		j := sort.Search(len(okTimes)-i, func(j int) bool {
 			return okTimes[i+j] > dt+time.Second
 		})
 
-		require.Lessf(t, j, 130, "%d goroutines acquired semaphore on interval [%v, %v)", j, dt, dt+time.Second)
+		require.Lessf(
+			t,
+			j,
+			130,
+			"%d goroutines acquired semaphore on interval [%v, %v)",
+			j,
+			dt,
+			dt+time.Second,
+		)
 	}
-
 	// Uncomment this line to see full distribution
-	// spew.Fdump(os.Stderr, okTimes)
 }
 
 func TestStressBlocking(t *testing.T) {

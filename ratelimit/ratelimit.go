@@ -9,21 +9,48 @@ import (
 )
 
 // Limiter is precise rate limiter with context support.
-type Limiter struct {
-}
 
 var ErrStopped = errors.New("limiter stopped")
 
-// NewLimiter returns limiter that throttles rate of successful Acquire() calls
-// to maxSize events at any given interval.
+type Limiter struct {
+	NumReqsLimit int
+	TimeLimit    time.Duration
+	isStoped     bool
+	queue        chan struct{}
+	lock         chan struct{}
+}
+
 func NewLimiter(maxCount int, interval time.Duration) *Limiter {
-	panic("not implemented")
+	l := &Limiter{
+		NumReqsLimit: maxCount,
+		TimeLimit:    interval,
+		queue:        make(chan struct{}, maxCount),
+		lock:         make(chan struct{}, 1),
+	}
+	l.lock <- struct{}{}
+	return l
 }
 
 func (l *Limiter) Acquire(ctx context.Context) error {
-	panic("not implemented")
+	<-l.lock
+	defer func() { l.lock <- struct{}{} }()
+	if l.isStoped {
+		l.queue = make(chan struct{})
+		return ErrStopped
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			<-l.queue
+			return ctx.Err()
+		case l.queue <- struct{}{}:
+			return nil
+		case <-time.After(l.TimeLimit):
+			l.queue = make(chan struct{}, l.NumReqsLimit)
+		}
+	}
 }
 
 func (l *Limiter) Stop() {
-	panic("not implemented")
+	l.isStoped = true
 }
